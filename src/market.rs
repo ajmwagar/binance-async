@@ -14,7 +14,7 @@ pub struct Market {
 // Market Data endpoints
 impl Market {
     // Order book (Default 100; max 100)
-    pub fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
+    pub async fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
     where
         S: Into<String>,
     {
@@ -23,7 +23,7 @@ impl Market {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/depth", &request)?;
+        let data = self.client.get("/api/v3/depth", &request).await?;
 
         let order_book: OrderBook = from_str(data.as_str())?;
 
@@ -31,8 +31,8 @@ impl Market {
     }
 
     // Latest price for ALL symbols.
-    pub fn get_all_prices(&self) -> Result<Prices> {
-        let data = self.client.get("/api/v3/ticker/price", "")?;
+    pub async fn get_all_prices(&self) -> Result<Prices> {
+        let data = self.client.get("/api/v3/ticker/price", "").await?;
 
         let prices: Prices = from_str(data.as_str())?;
 
@@ -40,7 +40,7 @@ impl Market {
     }
 
     // Latest price for ONE symbol.
-    pub fn get_price<S>(&self, symbol: S) -> Result<SymbolPrice>
+    pub async fn get_price<S>(&self, symbol: S) -> Result<SymbolPrice>
     where
         S: Into<String>,
     {
@@ -49,14 +49,14 @@ impl Market {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/ticker/price", &request)?;
+        let data = self.client.get("/api/v3/ticker/price", &request).await?;
         let symbol_price: SymbolPrice = from_str(data.as_str())?;
 
         Ok(symbol_price)
     }
 
     // Average price for ONE symbol.
-    pub fn get_average_price<S>(&self, symbol: S) -> Result<AveragePrice>
+    pub async fn get_average_price<S>(&self, symbol: S) -> Result<AveragePrice>
     where
         S: Into<String>,
     {
@@ -65,7 +65,7 @@ impl Market {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/avgPrice", &request)?;
+        let data = self.client.get("/api/v3/avgPrice", &request).await?;
         let average_price: AveragePrice = from_str(data.as_str())?;
 
         Ok(average_price)
@@ -73,8 +73,8 @@ impl Market {
 
     // Symbols order book ticker
     // -> Best price/qty on the order book for ALL symbols.
-    pub fn get_all_book_tickers(&self) -> Result<BookTickers> {
-        let data = self.client.get("/api/v3/ticker/bookTicker", "")?;
+    pub async fn get_all_book_tickers(&self) -> Result<BookTickers> {
+        let data = self.client.get("/api/v3/ticker/bookTicker", "").await?;
 
         let book_tickers: BookTickers = from_str(data.as_str())?;
 
@@ -82,7 +82,7 @@ impl Market {
     }
 
     // -> Best price/qty on the order book for ONE symbol
-    pub fn get_book_ticker<S>(&self, symbol: S) -> Result<Tickers>
+    pub async fn get_book_ticker<S>(&self, symbol: S) -> Result<Tickers>
     where
         S: Into<String>,
     {
@@ -91,14 +91,14 @@ impl Market {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/ticker/bookTicker", &request)?;
+        let data = self.client.get("/api/v3/ticker/bookTicker", &request).await?;
         let ticker: Tickers = from_str(data.as_str())?;
 
         Ok(ticker)
     }
 
     // 24hr ticker price change statistics
-    pub fn get_24h_price_stats<S>(&self, symbol: S) -> Result<PriceStats>
+    pub async fn get_24h_price_stats<S>(&self, symbol: S) -> Result<PriceStats>
     where
         S: Into<String>,
     {
@@ -107,7 +107,7 @@ impl Market {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/ticker/24hr", &request)?;
+        let data = self.client.get("/api/v3/ticker/24hr", &request).await?;
 
         let stats: PriceStats = from_str(data.as_str())?;
 
@@ -116,7 +116,7 @@ impl Market {
 
     // Returns up to 'limit' klines for given symbol and interval ("1m", "5m", ...)
     // https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#klinecandlestick-data
-    pub fn get_klines<S1, S2, S3, S4, S5>(
+    pub async fn get_klines<S1, S2, S3, S4, S5>(
         &self, symbol: S1, interval: S2, limit: S3, start_time: S4, end_time: S5,
     ) -> Result<KlineSummaries>
     where
@@ -144,7 +144,7 @@ impl Market {
 
         let request = build_request(&parameters);
 
-        let data = self.client.get("/api/v3/klines", &request)?;
+        let data = self.client.get("/api/v3/klines", &request).await?;
         let parsed_data: Vec<Vec<Value>> = from_str(data.as_str())?;
 
         let klines = KlineSummaries::AllKlineSummaries(

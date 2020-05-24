@@ -40,7 +40,7 @@ pub struct FuturesMarket {
 
 impl FuturesMarket {
     // Order book (Default 100; max 1000)
-    pub fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
+    pub async fn get_depth<S>(&self, symbol: S) -> Result<OrderBook>
     where
         S: Into<String>,
     {
@@ -49,14 +49,14 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/depth", &request)?;
+        let data = self.client.get("/fapi/v1/depth", &request).await?;
 
         let order_book: OrderBook = from_str(data.as_str())?;
 
         Ok(order_book)
     }
 
-    pub fn get_trades<S>(&self, symbol: S) -> Result<Trades>
+    pub async fn get_trades<S>(&self, symbol: S) -> Result<Trades>
     where
         S: Into<String>,
     {
@@ -65,7 +65,7 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/trades", &request)?;
+        let data = self.client.get("/fapi/v1/trades", &request).await?;
 
         let trades: Trades = from_str(data.as_str())?;
 
@@ -73,7 +73,7 @@ impl FuturesMarket {
     }
 
     // TODO This may be incomplete, as it hasn't been tested
-    pub fn get_historical_trades<S1, S2, S3>(
+    pub async fn get_historical_trades<S1, S2, S3>(
         &self, symbol: S1, from_id: S2, limit: S3,
     ) -> Result<Trades>
     where
@@ -97,14 +97,14 @@ impl FuturesMarket {
 
         let data = self
             .client
-            .get_signed("/fapi/v1/historicalTrades", &request)?;
+            .get_signed("/fapi/v1/historicalTrades", &request).await?;
 
         let trades: Trades = from_str(data.as_str())?;
 
         Ok(trades)
     }
 
-    pub fn get_agg_trades<S1, S2, S3, S4, S5>(
+    pub async fn get_agg_trades<S1, S2, S3, S4, S5>(
         &self, symbol: S1, from_id: S2, start_time: S3, end_time: S4, limit: S5,
     ) -> Result<AggTrades>
     where
@@ -134,7 +134,7 @@ impl FuturesMarket {
 
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/aggTrades", &request)?;
+        let data = self.client.get("/fapi/v1/aggTrades", &request).await?;
 
         let aggtrades: AggTrades = from_str(data.as_str())?;
 
@@ -143,7 +143,7 @@ impl FuturesMarket {
 
     // Returns up to 'limit' klines for given symbol and interval ("1m", "5m", ...)
     // https://github.com/binance-exchange/binance-official-api-docs/blob/master/rest-api.md#klinecandlestick-data
-    pub fn get_klines<S1, S2, S3, S4, S5>(
+    pub async fn get_klines<S1, S2, S3, S4, S5>(
         &self, symbol: S1, interval: S2, limit: S3, start_time: S4, end_time: S5,
     ) -> Result<KlineSummaries>
     where
@@ -171,7 +171,7 @@ impl FuturesMarket {
 
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/klines", &request)?;
+        let data = self.client.get("/fapi/v1/klines", &request).await?;
         let parsed_data: Vec<Vec<Value>> = from_str(data.as_str())?;
 
         let klines = KlineSummaries::AllKlineSummaries(
@@ -196,7 +196,7 @@ impl FuturesMarket {
     }
 
     // 24hr ticker price change statistics
-    pub fn get_24h_price_stats<S>(&self, symbol: S) -> Result<PriceStats>
+    pub async fn get_24h_price_stats<S>(&self, symbol: S) -> Result<PriceStats>
     where
         S: Into<String>,
     {
@@ -205,7 +205,7 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/ticker/24hr", &request)?;
+        let data = self.client.get("/fapi/v1/ticker/24hr", &request).await?;
 
         let stats: PriceStats = from_str(data.as_str())?;
 
@@ -213,7 +213,7 @@ impl FuturesMarket {
     }
 
     // Latest price for ONE symbol.
-    pub fn get_price<S>(&self, symbol: S) -> Result<SymbolPrice>
+    pub async fn get_price<S>(&self, symbol: S) -> Result<SymbolPrice>
     where
         S: Into<String>,
     {
@@ -222,7 +222,7 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/ticker/price", &request)?;
+        let data = self.client.get("/fapi/v1/ticker/price", &request).await?;
         let symbol_price: SymbolPrice = from_str(data.as_str())?;
 
         Ok(symbol_price)
@@ -230,8 +230,8 @@ impl FuturesMarket {
 
     // Symbols order book ticker
     // -> Best price/qty on the order book for ALL symbols.
-    pub fn get_all_book_tickers(&self) -> Result<BookTickers> {
-        let data = self.client.get("/fapi/v1/ticker/bookTicker", "")?;
+    pub async fn get_all_book_tickers(&self) -> Result<BookTickers> {
+        let data = self.client.get("/fapi/v1/ticker/bookTicker", "").await?;
 
         let book_tickers: BookTickers = from_str(data.as_str())?;
 
@@ -239,7 +239,7 @@ impl FuturesMarket {
     }
 
     // -> Best price/qty on the order book for ONE symbol
-    pub fn get_book_ticker<S>(&self, symbol: S) -> Result<Tickers>
+    pub async fn get_book_ticker<S>(&self, symbol: S) -> Result<Tickers>
     where
         S: Into<String>,
     {
@@ -248,28 +248,28 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/ticker/bookTicker", &request)?;
+        let data = self.client.get("/fapi/v1/ticker/bookTicker", &request).await?;
         let ticker: Tickers = from_str(data.as_str())?;
 
         Ok(ticker)
     }
 
-    pub fn get_mark_prices(&self) -> Result<MarkPrices> {
-        let data = self.client.get("/fapi/v1/premiumIndex", "")?;
+    pub async fn get_mark_prices(&self) -> Result<MarkPrices> {
+        let data = self.client.get("/fapi/v1/premiumIndex", "").await?;
 
         let mark_prices: MarkPrices = from_str(data.as_str())?;
 
         Ok(mark_prices)
     }
 
-    pub fn get_all_liquidation_orders(&self) -> Result<LiquidationOrders> {
-        let data = self.client.get("/fapi/v1/allForceOrders", "")?;
+    pub async fn get_all_liquidation_orders(&self) -> Result<LiquidationOrders> {
+        let data = self.client.get("/fapi/v1/allForceOrders", "").await?;
         let liquidation_orders: LiquidationOrders = from_str(data.as_str())?;
 
         Ok(liquidation_orders)
     }
 
-    pub fn open_interest<S>(&self, symbol: S) -> Result<OpenInterest>
+    pub async fn open_interest<S>(&self, symbol: S) -> Result<OpenInterest>
     where
         S: Into<String>,
     {
@@ -278,7 +278,7 @@ impl FuturesMarket {
         parameters.insert("symbol".into(), symbol.into());
         let request = build_request(&parameters);
 
-        let data = self.client.get("/fapi/v1/openInterest", &request)?;
+        let data = self.client.get("/fapi/v1/openInterest", &request).await?;
         let open_interest: OpenInterest = from_str(data.as_str())?;
 
         Ok(open_interest)

@@ -81,12 +81,12 @@ impl<'a> WebSockets<'a> {
 
                 match message {
                     Message::Text(msg) => {
-                        if value["u"] != serde_json::Value::Null &&
-                            value["s"] != serde_json::Value::Null &&
-                            value["b"] != serde_json::Value::Null &&
-                            value["B"] != serde_json::Value::Null &&
-                            value["a"] != serde_json::Value::Null &&
-                            value["A"] != serde_json::Value::Null
+                        if value["u"] != serde_json::Value::Null
+                            && value["s"] != serde_json::Value::Null
+                            && value["b"] != serde_json::Value::Null
+                            && value["B"] != serde_json::Value::Null
+                            && value["a"] != serde_json::Value::Null
+                            && value["A"] != serde_json::Value::Null
                         {
                             let book_ticker: BookTickerEvent = from_str(msg.as_str())?;
                             (self.handler)(WebsocketEvent::BookTicker(book_ticker))?;

@@ -10,14 +10,14 @@ pub struct FuturesGeneral {
 
 impl FuturesGeneral {
     // Test connectivity
-    pub fn ping(&self) -> Result<String> {
-        self.client.get("/fapi/v1/ping", "")?;
+    pub async fn ping(&self) -> Result<String> {
+        self.client.get("/fapi/v1/ping", "").await?;
         Ok("pong".into())
     }
 
     // Check server time
-    pub fn get_server_time(&self) -> Result<ServerTime> {
-        let data: String = self.client.get("/fapi/v1/time", "")?;
+    pub async fn get_server_time(&self) -> Result<ServerTime> {
+        let data: String = self.client.get("/fapi/v1/time", "").await?;
         let server_time: ServerTime = from_str(data.as_str())?;
 
         Ok(server_time)
@@ -25,20 +25,20 @@ impl FuturesGeneral {
 
     // Obtain exchange information
     // - Current exchange trading rules and symbol information
-    pub fn exchange_info(&self) -> Result<ExchangeInformation> {
-        let data: String = self.client.get("/fapi/v1/exchangeInfo", "")?;
+    pub async fn exchange_info(&self) -> Result<ExchangeInformation> {
+        let data: String = self.client.get("/fapi/v1/exchangeInfo", "").await?;
         let info: ExchangeInformation = from_str(data.as_str())?;
 
         Ok(info)
     }
 
     // Get Symbol information
-    pub fn get_symbol_info<S>(&self, symbol: S) -> Result<Symbol>
+    pub async fn get_symbol_info<S>(&self, symbol: S) -> Result<Symbol>
     where
         S: Into<String>,
     {
         let upper_symbol = symbol.into().to_uppercase();
-        match self.exchange_info() {
+        match self.exchange_info().await {
             Ok(info) => {
                 for item in info.symbols {
                     if item.symbol == upper_symbol {
