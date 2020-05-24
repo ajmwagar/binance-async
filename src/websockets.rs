@@ -3,9 +3,8 @@ use crate::errors::*;
 use url::Url;
 use serde_json::from_str;
 
-use tokio::stream::Stream as AsyncStream;
-use tokio::io::{AsyncRead, AsyncWrite};
-use std::sync::atomic::{AtomicBool, Ordering};
+use tokio::stream::StreamExt;
+use std::sync::atomic::AtomicBool;
 use async_tungstenite::{
     tokio::{connect_async, TokioAdapter},
     WebSocketStream,
@@ -85,11 +84,11 @@ impl<'a> WebSockets<'a> {
         }
     }
 
-    pub fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
+    pub async fn event_loop(&mut self, _running: &AtomicBool) -> Result<()> {
         if let Some(ref mut socket) = self.socket {
-            let (write, read) = socket.0.split();
+            let socket = &mut socket.0;
 
-            while running.load(Ordering::Relaxed) {
+            while let Some(Ok(message)) = socket.next().await {
                 let value: serde_json::Value = serde_json::from_str(message.to_text()?)?;
                 match message {
                     Message::Text(msg) => {
@@ -131,8 +130,7 @@ impl<'a> WebSockets<'a> {
                     }
                 }
             }
-
-            Ok(())
         }
+        Ok(())
     }
 }

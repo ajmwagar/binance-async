@@ -363,7 +363,8 @@ impl Account {
         order_parameters.insert("symbol".into(), order.symbol);
         order_parameters.insert("side".into(), order.order_side);
         order_parameters.insert("type".into(), order.order_type);
-        order_parameters.insert("quantity".into(), order.qty.to_string());
+        // order_parameters.insert("quantity".into(), order.qty.to_string());
+        order_parameters.insert("quoteOrderQty".into(), order.qty.to_string());
 
         if order.price != 0.0 {
             order_parameters.insert("price".into(), order.price.to_string());

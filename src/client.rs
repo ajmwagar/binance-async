@@ -140,10 +140,9 @@ impl Client {
         Ok(custon_headers)
     }
 
-    async fn handler(&self, mut response: Response) -> Result<String> {
+    async fn handler(&self, response: Response) -> Result<String> {
         match response.status() {
             StatusCode::OK => {
-                let mut body = String::new();
                 let body = response.text().await?;
                 Ok(body)
             }
