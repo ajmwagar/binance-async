@@ -3,11 +3,15 @@ use crate::errors::*;
 use url::Url;
 use serde_json::from_str;
 
+use tokio::stream::Stream as AsyncStream;
+use tokio::io::{AsyncRead, AsyncWrite};
 use std::sync::atomic::{AtomicBool, Ordering};
-use tungstenite::{connect, Message};
-use tungstenite::protocol::WebSocket;
-use tungstenite::client::AutoStream;
-use tungstenite::handshake::client::Response;
+use async_tungstenite::{
+    tokio::{connect_async, TokioAdapter},
+    WebSocketStream,
+    stream::Stream,
+    tungstenite::{Message, handshake::client::Response},
+};
 
 static WEBSOCKET_URL: &str = "wss://stream.binance.com:9443/ws/";
 
@@ -34,7 +38,15 @@ pub enum WebsocketEvent {
 }
 
 pub struct WebSockets<'a> {
-    pub socket: Option<(WebSocket<AutoStream>, Response)>,
+    pub socket: Option<(
+        WebSocketStream<
+            Stream<
+                TokioAdapter<tokio::net::TcpStream>,
+                async_tls::client::TlsStream<TokioAdapter<tokio::net::TcpStream>>,
+            >,
+        >,
+        Response,
+    )>,
     handler: Box<dyn FnMut(WebsocketEvent) -> Result<()> + 'a>,
 }
 
@@ -49,11 +61,11 @@ impl<'a> WebSockets<'a> {
         }
     }
 
-    pub fn connect(&mut self, endpoint: &str) -> Result<()> {
+    pub async fn connect(&mut self, endpoint: &str) -> Result<()> {
         let wss: String = format!("{}{}", WEBSOCKET_URL, endpoint);
         let url = Url::parse(&wss)?;
 
-        match connect(url) {
+        match connect_async(url).await {
             Ok(answer) => {
                 self.socket = Some(answer);
                 Ok(())
@@ -64,9 +76,9 @@ impl<'a> WebSockets<'a> {
         }
     }
 
-    pub fn disconnect(&mut self) -> Result<()> {
+    pub async fn disconnect(&mut self) -> Result<()> {
         if let Some(ref mut socket) = self.socket {
-            socket.0.close(None)?;
+            socket.0.close(None).await?;
             Ok(())
         } else {
             bail!("Not able to close the connection");
@@ -74,11 +86,11 @@ impl<'a> WebSockets<'a> {
     }
 
     pub fn event_loop(&mut self, running: &AtomicBool) -> Result<()> {
-        while running.load(Ordering::Relaxed) {
-            if let Some(ref mut socket) = self.socket {
-                let message = socket.0.read_message()?;
-                let value: serde_json::Value = serde_json::from_str(message.to_text()?)?;
+        if let Some(ref mut socket) = self.socket {
+            let (write, read) = socket.0.split();
 
+            while running.load(Ordering::Relaxed) {
+                let value: serde_json::Value = serde_json::from_str(message.to_text()?)?;
                 match message {
                     Message::Text(msg) => {
                         if value["u"] != serde_json::Value::Null
@@ -119,7 +131,8 @@ impl<'a> WebSockets<'a> {
                     }
                 }
             }
+
+            Ok(())
         }
-        Ok(())
     }
 }
